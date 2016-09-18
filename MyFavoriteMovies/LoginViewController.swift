@@ -99,8 +99,46 @@ class LoginViewController: UIViewController {
         /* 4. Make the request */
         let task = appDelegate.sharedSession.dataTaskWithRequest(request) { (data, response, error) in
             
+            func displayError(error: String) {
+                print(error)
+            }
+            
+            /* GUARD: Was there an error? */
+            guard (error == nil) else {
+                displayError("Error: in your request: \(error)")
+                return
+            }
+            
+            /* GUARD: Did we get a successful 2XX response? */
+            guard let statusCode = (response as? NSHTTPURLResponse)?.statusCode
+                where statusCode >= 200 && statusCode <= 299
+                else {
+                    displayError("Error: request status code returned other than 2xx!")
+                    return
+            }
+            
+            /* GUARD: Was there any data returned? */
+            guard let data = data else {
+                displayError("Error: No data was returned by the request!")
+                return
+            }
+
             /* 5. Parse the data */
+            let parsedResult: AnyObject!
+            
+            do {
+                parsedResult = try NSJSONSerialization.JSONObjectWithData(data, options: .AllowFragments)
+                print(parsedResult)
+            } catch {
+                displayError("Could not parse the data as JSON: \(data)")
+                return
+            }
+            
             /* 6. Use the data! */
+            guard let token = parsedResult[Constants.TMDBResponseKeys.RequestToken] as? String else {
+                displayError("Could no use the token")
+                return
+            }
         }
 
         /* 7. Start the request */

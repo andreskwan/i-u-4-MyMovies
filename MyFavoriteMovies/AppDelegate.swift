@@ -40,7 +40,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 extension AppDelegate {
     
-    func tmdbURLFromParameters(parameters: [String:AnyObject], withPathExtension: String? = nil) -> NSURL {
+    func tmdbURLFromParameters(parameters: [String:AnyObject],
+                               withPathExtension: String? = nil) -> NSURL {
         
         let components = NSURLComponents()
         components.scheme = Constants.TMDB.ApiScheme
