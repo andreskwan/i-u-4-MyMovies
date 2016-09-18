@@ -70,6 +70,18 @@ class LoginViewController: UIViewController {
                 Step 5: Go to the next view!            
             */
             getRequestToken()
+            /*
+             getRequestToken() should have a completion block
+             why? in that way should be set the appDelegate.requestToken value 
+             to make it clear
+             
+             the other methods should be called here
+             to avoid side effects
+             
+             so they complete 
+             then perfom next action 
+             
+             */
         }
     }
     
@@ -139,22 +151,85 @@ class LoginViewController: UIViewController {
                 displayError("Could no use the token")
                 return
             }
+            self.appDelegate.requestToken = token
+            self.loginWithToken(token)
         }
 
         /* 7. Start the request */
         task.resume()
     }
     
-    private func loginWithToken(requestToken: String) {
+    private func loginWithToken(requestToken: String, username: String = "andreskwan", password: String  = "me gustan las pelis") {
         
         /* TASK: Login, then get a session id */
         
         /* 1. Set the parameters */
+        let methodParameters = [
+            Constants.TMDBParameterKeys.ApiKey: Constants.TMDBParameterValues.ApiKey,
+            Constants.TMDBParameterKeys.RequestToken: requestToken,
+            Constants.TMDBParameterKeys.Username: username,
+            Constants.TMDBParameterKeys.Password: password
+        ]
+        
         /* 2/3. Build the URL, Configure the request */
+        let request = NSURLRequest(URL: appDelegate.tmdbURLFromParameters(methodParameters, withPathExtension: "/authentication/token/validate_with_login"))
+        
         /* 4. Make the request */
-        /* 5. Parse the data */
-        /* 6. Use the data! */
+        let task = appDelegate.sharedSession.dataTaskWithRequest(request) { (data, response, error) in
+            
+            func displayError(error: String) {
+                print(error)
+            }
+            
+            /* GUARD: Was there an error? */
+            guard (error == nil) else {
+                displayError("Error: in your request: \(error)")
+                return
+            }
+            
+            /* GUARD: Did we get a successful 2XX response? */
+            guard let statusCode = (response as? NSHTTPURLResponse)?.statusCode
+                where statusCode >= 200 && statusCode <= 299
+                else {
+                    displayError("Error: request status code returned other than 2xx!")
+                    return
+            }
+            
+            /* GUARD: Was there any data returned? */
+            guard let data = data else {
+                displayError("Error: No data was returned by the request!")
+                return
+            }
+            
+            /* 5. Parse the data */
+            let parsedResult: AnyObject!
+            
+            do {
+                parsedResult = try NSJSONSerialization.JSONObjectWithData(data, options: .AllowFragments)
+                print("SessionID parsedResult: \(parsedResult)")
+            } catch {
+                displayError("Could not parse the data as JSON: \(data)")
+                return
+            }
+            
+            /* 6. Use the data! */
+            /* GUARD: Did TheMovieDB return an error? */
+            if let _ = parsedResult[Constants.TMDBResponseKeys.StatusCode] as? Int {
+                displayError("TheMovieDB returned an error. See the '\(Constants.TMDBResponseKeys.StatusCode)' and '\(Constants.TMDBResponseKeys.StatusMessage)' in \(parsedResult)")
+                return
+            }
+            
+            /* GUARD: Is the "success" key in parsedResult? */
+            guard let success = parsedResult[Constants.TMDBResponseKeys.Success] as? Bool where success == true else {
+                displayError("Cannot find key '\(Constants.TMDBResponseKeys.Success)' in \(parsedResult)")
+                return
+            }
+            print("\n SessionID: \(success)")
+            self.getSessionID(self.appDelegate.requestToken!)
+        }
+        
         /* 7. Start the request */
+        task.resume()
     }
     
     private func getSessionID(requestToken: String) {
