@@ -206,7 +206,7 @@ class LoginViewController: UIViewController {
             
             do {
                 parsedResult = try NSJSONSerialization.JSONObjectWithData(data, options: .AllowFragments)
-                print("SessionID parsedResult: \(parsedResult)")
+                print("loginWithToken parsedResult: \(parsedResult)")
             } catch {
                 displayError("Could not parse the data as JSON: \(data)")
                 return
@@ -224,7 +224,6 @@ class LoginViewController: UIViewController {
                 displayError("Cannot find key '\(Constants.TMDBResponseKeys.Success)' in \(parsedResult)")
                 return
             }
-            print("\n SessionID: \(success)")
             self.getSessionID(self.appDelegate.requestToken!)
         }
         
@@ -278,9 +277,15 @@ class LoginViewController: UIViewController {
             
             do {
                 parsedResult = try NSJSONSerialization.JSONObjectWithData(data, options: .AllowFragments)
-                print("SessionID parsedResult: \(parsedResult)")
+                print("getSessionID parsedResult: \(parsedResult)")
             } catch {
                 displayError("Could not parse the data as JSON: \(data)")
+                return
+            }
+            
+            /* GUARD: Did TheMovieDB return an error? */
+            if let _ = parsedResult[Constants.TMDBResponseKeys.StatusCode] as? Int {
+                displayError("TheMovieDB returned an error. See the '\(Constants.TMDBResponseKeys.StatusCode)' and '\(Constants.TMDBResponseKeys.StatusMessage)' in \(parsedResult)")
                 return
             }
             
@@ -291,6 +296,7 @@ class LoginViewController: UIViewController {
             }
             print("\n SessionID\(sessionID)")
             self.appDelegate.sessionID = sessionID
+            self.getUserID(sessionID)
         }
         
         /* 7. Start the request */
@@ -302,11 +308,71 @@ class LoginViewController: UIViewController {
         /* TASK: Get the user's ID, then store it (appDelegate.userID) for future use and go to next view! */
         
         /* 1. Set the parameters */
+        let methodParameters = [
+            Constants.TMDBParameterKeys.ApiKey: Constants.TMDBParameterValues.ApiKey,
+            Constants.TMDBParameterKeys.SessionID: sessionID
+        ]
+        
         /* 2/3. Build the URL, Configure the request */
+        let request = NSURLRequest(URL: appDelegate.tmdbURLFromParameters(methodParameters, withPathExtension: "/account"))
+        
+        
         /* 4. Make the request */
-        /* 5. Parse the data */
-        /* 6. Use the data! */
+        let task = appDelegate.sharedSession.dataTaskWithRequest(request) { (data, response, error) in
+            
+            func displayError(error: String) {
+                print(error)
+            }
+            
+            /* GUARD: Was there an error? */
+            guard (error == nil) else {
+                displayError("Error: in your request: \(error)")
+                return
+            }
+            
+            /* GUARD: Did we get a successful 2XX response? */
+            guard let statusCode = (response as? NSHTTPURLResponse)?.statusCode
+                where statusCode >= 200 && statusCode <= 299
+                else {
+                    displayError("Error: request status code returned other than 2xx!")
+                    return
+            }
+            
+            /* GUARD: Was there any data returned? */
+            guard let data = data else {
+                displayError("Error: No data was returned by the request!")
+                return
+            }
+            
+            /* 5. Parse the data */
+            let parsedResult: AnyObject!
+            
+            do {
+                parsedResult = try NSJSONSerialization.JSONObjectWithData(data, options: .AllowFragments)
+                print("getUserID parsedResult: \(parsedResult)")
+            } catch {
+                displayError("Could not parse the data as JSON: \(data)")
+                return
+            }
+            
+            /* GUARD: Did TheMovieDB return an error? */
+            if let _ = parsedResult[Constants.TMDBResponseKeys.StatusCode] as? Int {
+                displayError("TheMovieDB returned an error. See the '\(Constants.TMDBResponseKeys.StatusCode)' and '\(Constants.TMDBResponseKeys.StatusMessage)' in \(parsedResult)")
+                return
+            }
+            
+            /* 6. Use the data! */
+            guard let userID = parsedResult[Constants.TMDBResponseKeys.UserID] as? Int else {
+                displayError("Could no use the sessionID")
+                return
+            }
+            print("\nuserID: \(userID)")
+            self.appDelegate.userID = userID
+            self.completeLogin()
+        }
+        
         /* 7. Start the request */
+        task.resume()
     }
 }
 
