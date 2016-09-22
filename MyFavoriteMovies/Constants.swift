@@ -11,7 +11,13 @@ import UIKit
 // MARK: - Constants
 
 struct Constants {
-    
+    struct TMDBHeaderKeys {
+        static let ContentType = "content-type"
+    }
+    struct ContenTypeValues {
+        static let JSON = "application/json"
+        static let Charset = "charset=utf-8"
+    }
     // MARK: TMDB
     struct TMDB {
         static let ApiScheme = "https"

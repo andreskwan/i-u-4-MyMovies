@@ -172,11 +172,15 @@ class MovieDetailViewController: UIViewController {
     
     @IBAction func toggleFavorite(sender: AnyObject) {
         
-        // let shouldFavorite = !isFavorite
+         let shouldFavorite = !isFavorite
         
         /* TASK: Add movie as favorite, then update favorite buttons */
+        
         /* 1. Set the parameters */
+        let headers = [Constants.TMDBHeaderKeys.ContentType: "\(Constants.ContenTypeValues.JSON);\(Constants.ContenTypeValues.Charset)"]
+        
         /* 2/3. Build the URL, Configure the request */
+        
         /* 4. Make the request */
         /* 5. Parse the data */
         /* 6. Use the data! */
