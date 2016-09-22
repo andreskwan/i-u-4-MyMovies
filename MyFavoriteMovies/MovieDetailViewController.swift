@@ -179,6 +179,12 @@ class MovieDetailViewController: UIViewController {
         /* 1. Set the parameters */
         let headers = [Constants.TMDBHeaderKeys.ContentType: "\(Constants.ContenTypeValues.JSON);\(Constants.ContenTypeValues.Charset)"]
         
+        let parameters = [
+            "media_type": "movie",
+            "media_id": 550,
+            "favorite": true
+        ]
+        
         /* 2/3. Build the URL, Configure the request */
         
         /* 4. Make the request */
