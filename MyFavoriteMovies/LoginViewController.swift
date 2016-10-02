@@ -140,7 +140,7 @@ class LoginViewController: UIViewController {
             
             do {
                 parsedResult = try NSJSONSerialization.JSONObjectWithData(data, options: .AllowFragments)
-                print(parsedResult)
+                print("getRequestToken parsedResult: \n\(parsedResult)")
             } catch {
                 displayError("Could not parse the data as JSON: \(data)")
                 return
@@ -206,7 +206,7 @@ class LoginViewController: UIViewController {
             
             do {
                 parsedResult = try NSJSONSerialization.JSONObjectWithData(data, options: .AllowFragments)
-                print("loginWithToken parsedResult: \(parsedResult)")
+                print("loginWithToken() parsedResult: \n\(parsedResult)")
             } catch {
                 displayError("Could not parse the data as JSON: \(data)")
                 return
@@ -277,7 +277,7 @@ class LoginViewController: UIViewController {
             
             do {
                 parsedResult = try NSJSONSerialization.JSONObjectWithData(data, options: .AllowFragments)
-                print("getSessionID parsedResult: \(parsedResult)")
+                print("getSessionID() parsedResult: \(parsedResult)")
             } catch {
                 displayError("Could not parse the data as JSON: \(data)")
                 return
@@ -349,7 +349,7 @@ class LoginViewController: UIViewController {
             
             do {
                 parsedResult = try NSJSONSerialization.JSONObjectWithData(data, options: .AllowFragments)
-                print("getUserID parsedResult: \(parsedResult)")
+                print("getUserID parsedResult: \n\(parsedResult)")
             } catch {
                 displayError("Could not parse the data as JSON: \(data)")
                 return
