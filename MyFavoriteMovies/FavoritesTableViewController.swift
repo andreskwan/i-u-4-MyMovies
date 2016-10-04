@@ -183,7 +183,7 @@ extension FavoritesTableViewController {
         
         /* Push the movie detail view */
         let controller = storyboard!.instantiateViewControllerWithIdentifier("MovieDetailViewController") as! MovieDetailViewController
-        controller.movie = movies[indexPath.row]
+        controller.selectedMovie = movies[indexPath.row]
         navigationController!.pushViewController(controller, animated: true)
     }
 }

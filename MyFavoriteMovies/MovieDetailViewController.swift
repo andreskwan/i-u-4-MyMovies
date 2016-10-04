@@ -16,7 +16,7 @@ class MovieDetailViewController: UIViewController {
     
     var appDelegate: AppDelegate!
     var isFavorite = false
-    var movie: Movie?
+    var selectedMovie: Movie?
     
     // MARK: Outlets
     
@@ -38,11 +38,11 @@ class MovieDetailViewController: UIViewController {
         
         super.viewWillAppear(animated)
         
-        if let movie = movie {
+        if let selecteMovie = selectedMovie {
             
             // setting some defaults...
             posterImageView.image = UIImage(named: "film342.png")
-            titleLabel.text = movie.title
+            titleLabel.text = selecteMovie.title
             
             /* TASK A: Get favorite movies, then update the favorite buttons */
             /* 1A. Set the parameters */
@@ -79,7 +79,7 @@ class MovieDetailViewController: UIViewController {
                 /* 5A. Parse the data */
                 let parsedResult: AnyObject!
                 do {
-                    parsedResult = try NSJSONSerialization.JSONObjectWithData(data, options: .AllowFragments)
+                    parsedResult = try NSJSONSerialization.JSONObjectWithData(data, options: .AllowFragments) as? [String:AnyObject]
                 } catch {
                     print("Could not parse the data as JSON: '\(data)'")
                     return
@@ -98,17 +98,17 @@ class MovieDetailViewController: UIViewController {
                 }
                 
                 /* 6A. Use the data! */
-                let movies = Movie.moviesFromResults(results)
+                let myFavoritesMovies = Movie.moviesFromResults(results)
                 self.isFavorite = false
                 
-                for movie in movies {
-                    if movie.id == self.movie!.id {
+                for movie in myFavoritesMovies {
+                    if movie.id == self.selectedMovie!.id {
                         self.isFavorite = true
                     }
                 }
                 
                 performUIUpdatesOnMain {
-                    self.favoriteButton.tintColor = (self.isFavorite) ? nil : UIColor.blackColor()
+                    self.favoriteButton.tintColor = (self.isFavorite) ? UIColor.redColor() : UIColor.blackColor()
                 }
             }
             
@@ -116,7 +116,7 @@ class MovieDetailViewController: UIViewController {
             task.resume()
             
             /* TASK B: Get the poster image, then populate the image view */
-            if let posterPath = movie.posterPath {
+            if let posterPath = selecteMovie.posterPath {
                 
                 /* 1B. Set the parameters */
                 // There are none...
