@@ -172,32 +172,97 @@ class MovieDetailViewController: UIViewController {
     
     @IBAction func toggleFavorite(sender: AnyObject) {
         
-         let shouldFavorite = !isFavorite
+        let postBody: NSData
         
         /* TASK: Add movie as favorite, then update favorite buttons */
         
         /* 1. Set the parameters */
-        let headers = [Constants.TMDBHeaderKeys.ContentType: "\(Constants.ContenTypeValues.JSON);\(Constants.ContenTypeValues.Charset)"]
+        let requestHeaders = [Constants.TMDBHeaderKeys.ContentType: "\(Constants.ContenTypeValues.JSON);\(Constants.ContenTypeValues.Charset)"]
         
-        let parameters = [
+        let requestBody = [
             "media_type": "movie",
-            "media_id": 550,
-            "favorite": true
+            "media_id": selectedMovie!.id,
+            "favorite": !isFavorite
         ]
         
-        /* 2/3. Build the URL, Configure the request */
+        let methodParameters = [
+            Constants.TMDBParameterKeys.ApiKey: Constants.TMDBParameterValues.ApiKey,
+            Constants.TMDBParameterKeys.SessionID: appDelegate.sessionID!
+        ]
         
-        /* 4. Make the request */
-        /* 5. Parse the data */
-        /* 6. Use the data! */
-        /* 7. Start the request */
-        
-        /* If the favorite/unfavorite request completes, then use this code to update the UI...
-        
-        performUIUpdatesOnMain {
-            self.favoriteButton.tintColor = (shouldFavorite) ? nil : UIColor.blackColor()
+        /* 1.1 Serialize data for the request */
+        func displayError(error: String) {
+            print(error)
         }
         
-        */
+        do {
+            postBody = try NSJSONSerialization.dataWithJSONObject(requestBody, options: [])
+        } catch {
+            displayError("Could not create a JSON from: \(requestBody)")
+            return
+        }
+        
+        /* 2/3. Build the URL, Configure the request */
+        let postRequest = NSMutableURLRequest(URL: appDelegate.tmdbURLFromParameters(methodParameters,
+                                                                                     withPathExtension: "/account/\(appDelegate.userID!)/favorite"),
+                                              cachePolicy: .UseProtocolCachePolicy,
+                                              timeoutInterval: 10.0)
+        
+        /* 4. Make the request */
+        postRequest.HTTPMethod = "POST"
+        postRequest.allHTTPHeaderFields = requestHeaders
+        postRequest.HTTPBody = postBody
+        
+        let dataTask = appDelegate.sharedSession.dataTaskWithRequest(postRequest) { (data, response, error) in
+            /* GUARD: Was there an error? */
+            guard (error == nil) else {
+                displayError("Error: in your request: \(error)")
+                return
+            }
+            
+            /* GUARD: Did we get a successful 2XX response? */
+            guard let statusCode = (response as? NSHTTPURLResponse)?.statusCode
+                where statusCode >= 200 && statusCode <= 299
+                else {
+                    displayError("Error: request status code returned other than 2xx!")
+                    return
+            }
+            print("response: \n\(response)")
+            
+            /* GUARD: Was there any data returned? */
+            guard let data = data else {
+                displayError("Error: No data was returned by the request!")
+                return
+            }
+            //URL: https://api.themoviedb.org/3/account/6418353/favorite?session_id=64a484b7c2189971af6fc5c1e36deaa69b90b570&api_key=7e98d32900beea3bf969312bb6b13a9e
+            
+            /* 5. Parse the data */
+            let parsedResult: AnyObject!
+            
+            do {
+                parsedResult = try NSJSONSerialization.JSONObjectWithData(data, options: .AllowFragments) as? [String:AnyObject]
+                print("toggleFavorite() parsedResult: \n\(parsedResult)")
+            } catch {
+                displayError("Could not parse the data as JSON: \(data)")
+                return
+            }
+            
+            /* 6. Use the data! */
+            /* GUARD: Did TheMovieDB return an error? */
+            guard let statusCodeFavorite = parsedResult[Constants.TMDBResponseKeys.StatusCode] as? Int  else  {
+                displayError("TheMovieDB returned an error. See the '\(Constants.TMDBResponseKeys.StatusCode)' and '\(Constants.TMDBResponseKeys.StatusMessage)' in \(parsedResult)")
+                return
+            }
+            
+            self.isFavorite = statusCodeFavorite == 1 || statusCodeFavorite == 12 ? true : false
+            
+            /* If the favorite/unfavorite request completes, then use this code to update the UI... */
+            performUIUpdatesOnMain {
+                self.favoriteButton.tintColor = (self.isFavorite) ? UIColor.redColor() : UIColor.blackColor()
+            }
+        }
+        /* 7. Start the request */
+        dataTask.resume()
+        
     }
 }
